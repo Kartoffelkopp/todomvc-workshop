@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A plain JavaScript TodoMVC app for our AI coding workshop." />
+    <title>TodoMVC · AI Coding Workshop</title>
+  </head>
+  <body>
+    <section class="todoapp">
+      <header class="header">
+        <h1>todos</h1>
+        <input
+          class="new-todo"
+          placeholder="What needs to be done?"
+          aria-label="New todo"
+          autofocus
+        />
+      </header>
+      <main class="main">
+        <div class="toggle-all-container">
+          <input class="toggle-all" type="checkbox" aria-label="Toggle all todos" />
+          <label class="toggle-all-label">Mark all as complete</label>
+        </div>
+        <ul class="todo-list"></ul>
+      </main>
+      <footer class="footer">
+        <span class="todo-count"></span>
+        <ul class="filters">
+          <li><a href="#/" class="selected">All</a></li>
+          <li><a href="#/active">Active</a></li>
+          <li><a href="#/completed">Completed</a></li>
+        </ul>
+        <button class="clear-completed">Clear completed</button>
+      </footer>
+    </section>
+    <footer class="info">
+      <p>Double-click to edit a todo</p>
+      <p>Workshop starting point: todos reset when you reload.</p>
+      <p>Based on <a href="https://todomvc.com">TodoMVC</a> by the TodoMVC Team.</p>
+    </footer>
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>
