@@ -5,12 +5,24 @@ let Model;
 let store;
 let model;
 
-beforeEach(async () => {
+async function loadApp() {
   vi.resetModules();
   ({ default: Store } = await import("../src/store.js"));
   ({ default: Model } = await import("../src/model.js"));
   store = new Store("test-todos");
   model = new Model(store);
+}
+
+function readAll() {
+  const onRead = vi.fn();
+  model.read(onRead);
+  return onRead.mock.calls[0][0];
+}
+
+beforeEach(async () => {
+  localStorage.clear();
+  vi.restoreAllMocks();
+  await loadApp();
 });
 
 describe("existing todo behavior", () => {
@@ -69,5 +81,60 @@ describe("existing todo behavior", () => {
     expect(onRead).toHaveBeenCalledExactlyOnceWith([
       { id: expect.any(Number), title: "Keep me", completed: false },
     ]);
+  });
+});
+
+describe("persistence across reloads", () => {
+  it("keeps created, edited, and completed todos after a reload", async () => {
+    const onCreate = vi.fn();
+    model.create("First", onCreate);
+    model.create("Second");
+    const id = onCreate.mock.calls[0][0][0].id;
+    model.update(id, { title: "Updated", completed: true });
+
+    await loadApp();
+
+    expect(readAll()).toEqual([
+      { id, title: "Updated", completed: true },
+      { id: expect.any(Number), title: "Second", completed: false },
+    ]);
+  });
+
+  it("does not reuse stored IDs for todos created after a reload", async () => {
+    model.create("One");
+    model.create("Two");
+
+    await loadApp();
+    model.create("Three");
+
+    const ids = readAll().map((todo) => todo.id);
+    expect(ids).toHaveLength(3);
+    expect(new Set(ids).size).toBe(3);
+  });
+
+  it("keeps deletions and cleared completed todos after a reload", async () => {
+    const onCreate = vi.fn();
+    model.create("Delete me", onCreate);
+    model.create("Complete me", onCreate);
+    model.create("Keep me");
+    const [deleteId, completeId] = onCreate.mock.calls.map((call) => call[0][0].id);
+    model.remove(deleteId);
+    model.update(completeId, { completed: true });
+    model.read({ completed: true }, (done) => done.forEach((todo) => model.remove(todo.id)));
+
+    await loadApp();
+
+    expect(readAll()).toEqual([{ id: expect.any(Number), title: "Keep me", completed: false }]);
+  });
+
+  it("resets corrupt stored data to an empty list and warns", async () => {
+    localStorage.setItem("test-todos", "{bad");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await loadApp();
+
+    expect(readAll()).toEqual([]);
+    expect(warn).toHaveBeenCalledOnce();
+    expect(JSON.parse(localStorage.getItem("test-todos"))).toEqual({ todos: [] });
   });
 });
